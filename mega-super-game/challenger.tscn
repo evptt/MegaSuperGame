@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://bvd6futtj6h04"]
+
+[ext_resource type="PackedScene" uid="uid://bclrfdm7bmou5" path="res://challenger.blend" id="1_0nh8l"]
+
+[node name="challenger" unique_id=1024920887 instance=ExtResource("1_0nh8l")]
+
+[node name="Spot_003" parent="." index="0" unique_id=1463489187]
+visible = false
+
+[node name="Spot_002" parent="." index="1" unique_id=160408256]
+visible = false
+
+[node name="Spot_001" parent="." index="2" unique_id=1895592889]
+visible = false
+
+[node name="Spot" parent="." index="3" unique_id=636264181]
+visible = false
+
+[node name="Area" parent="." index="4" unique_id=196066320]
+visible = false
+
+[node name="Starlight Sun" parent="." index="5" unique_id=1938096732]
+visible = false
+
+[node name="Cube_003" parent="." index="14" unique_id=1507364060]
+visible = false
+
+[node name="Cube_004" parent="." index="15" unique_id=677012152]
+visible = false

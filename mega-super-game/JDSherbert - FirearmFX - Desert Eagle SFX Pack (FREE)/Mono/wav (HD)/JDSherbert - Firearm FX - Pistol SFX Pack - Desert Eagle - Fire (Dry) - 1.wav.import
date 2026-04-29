@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://b41g08c3nr668"
+path="res://.godot/imported/JDSherbert - Firearm FX - Pistol SFX Pack - Desert Eagle - Fire (Dry) - 1.wav-e65e68a39c34f50205e2d22776b85cfc.sample"
+
+[deps]
+
+source_file="res://JDSherbert - FirearmFX - Desert Eagle SFX Pack (FREE)/Mono/wav (HD)/JDSherbert - Firearm FX - Pistol SFX Pack - Desert Eagle - Fire (Dry) - 1.wav"
+dest_files=["res://.godot/imported/JDSherbert - Firearm FX - Pistol SFX Pack - Desert Eagle - Fire (Dry) - 1.wav-e65e68a39c34f50205e2d22776b85cfc.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://02bv720ucyir"
+path="res://.godot/imported/divider_wood_red_low_half.obj-eca8b08323ca98d51baef77d49f5c0eb.mesh"
+
+[deps]
+
+files=["res://.godot/imported/divider_wood_red_low_half.obj-eca8b08323ca98d51baef77d49f5c0eb.mesh"]
+
+source_file="res://OFFICE/dividers/divider_wood_red_low_half.obj"
+dest_files=["res://.godot/imported/divider_wood_red_low_half.obj-eca8b08323ca98d51baef77d49f5c0eb.mesh", "res://.godot/imported/divider_wood_red_low_half.obj-eca8b08323ca98d51baef77d49f5c0eb.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

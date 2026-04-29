@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cab6m66p7n0pg"
+path="res://.godot/imported/armchair_red.obj-576eb0aa232ddfa60ef4aaae0be451ab.mesh"
+
+[deps]
+
+files=["res://.godot/imported/armchair_red.obj-576eb0aa232ddfa60ef4aaae0be451ab.mesh"]
+
+source_file="res://OFFICE/couches/armchair_red.obj"
+dest_files=["res://.godot/imported/armchair_red.obj-576eb0aa232ddfa60ef4aaae0be451ab.mesh", "res://.godot/imported/armchair_red.obj-576eb0aa232ddfa60ef4aaae0be451ab.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
