@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://daybrvpts4tr6"
+path="res://.godot/imported/couch_red.obj-fd24afcf417191bc200838b5fae3edec.mesh"
+
+[deps]
+
+files=["res://.godot/imported/couch_red.obj-fd24afcf417191bc200838b5fae3edec.mesh"]
+
+source_file="res://assets/OFFICE/couches/couch_red.obj"
+dest_files=["res://.godot/imported/couch_red.obj-fd24afcf417191bc200838b5fae3edec.mesh", "res://.godot/imported/couch_red.obj-fd24afcf417191bc200838b5fae3edec.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

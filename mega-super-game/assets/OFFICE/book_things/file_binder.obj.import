@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://dhyyyi00c8r36"
+path="res://.godot/imported/file_binder.obj-43992f25af2427a87cdf64f00a5cebfd.mesh"
+
+[deps]
+
+files=["res://.godot/imported/file_binder.obj-43992f25af2427a87cdf64f00a5cebfd.mesh"]
+
+source_file="res://assets/OFFICE/book_things/file_binder.obj"
+dest_files=["res://.godot/imported/file_binder.obj-43992f25af2427a87cdf64f00a5cebfd.mesh", "res://.godot/imported/file_binder.obj-43992f25af2427a87cdf64f00a5cebfd.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
