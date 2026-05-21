@@ -532,6 +532,8 @@ offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="CrosshairH" type="ColorRect" parent="HUD/Crosshair" unique_id=1176212109]
 layout_mode = 0
