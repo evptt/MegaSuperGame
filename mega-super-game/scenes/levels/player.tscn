@@ -1,8 +1,7 @@
 [gd_scene format=4 uid="uid://sndua0npq8ln"]
 
 [ext_resource type="Script" uid="uid://plhhm6r31qhx" path="res://scripts/player/character_body_3d.gd" id="1_1ty3f"]
-[ext_resource type="AudioStream" uid="uid://dcu1bwurwyvv1" path="res://assets/Free Footsteps Pack/Concrete 1.wav" id="2_tucvp"]
-[ext_resource type="AudioStream" uid="uid://chyw0u3cn7oc4" path="res://assets/Free Footsteps Pack/Concrete 2.wav" id="3_cs8je"]
+[ext_resource type="Script" uid="uid://ck8m3c34iinkh" path="res://scripts/player/challenger_weapon.gd" id="4_8ye0v"]
 [ext_resource type="Script" uid="uid://ck8m3c34iinkh" path="res://scripts/player/challenger_weapon.gd" id="4_8ye0v"]
 [ext_resource type="Texture2D" uid="uid://bu6swcxur8hwp" path="res://assets/textures/challenger_Base_color.jpg" id="5_3pjju"]
 [ext_resource type="Texture2D" uid="uid://shy0s5bvkm58" path="res://assets/textures/challenger_Roughness.jpg" id="6_o1mvs"]
@@ -419,7 +418,6 @@ shadow_mesh = SubResource("ArrayMesh_oc25e")
 [node name="Player" type="CharacterBody3D" unique_id=676638657]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
 script = ExtResource("1_1ty3f")
-footstep_streams = Array[AudioStream]([ExtResource("2_tucvp"), ExtResource("3_cs8je")])
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1359322372]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.48466396, 0)
@@ -517,7 +515,6 @@ metadata/extras = {
 }
 
 [node name="FootstepPlayer" type="AudioStreamPlayer3D" parent="." unique_id=452342999]
-stream = ExtResource("2_tucvp")
 volume_db = -6.0
 unit_size = 12.0
 

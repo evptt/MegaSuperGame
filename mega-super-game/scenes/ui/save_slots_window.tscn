@@ -1,0 +1,6 @@
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://scripts/ui/save_slots_window.gd" id="1"]
+
+[node name="SaveSlotsWindow" type="CanvasLayer"]
+script = ExtResource("1")

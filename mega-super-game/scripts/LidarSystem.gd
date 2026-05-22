@@ -36,7 +36,6 @@ signal scan_stopped()
 @export var point_cell_size: float = 0.1
 
 
-
 # Вертикальный шаг для дополнительного смещения точек по высоте.
 @export var point_height_step: float = 0.02
 
@@ -49,7 +48,10 @@ signal scan_stopped()
 @export var enable_fog: bool = true
 
 # Маска коллизий для лидарных лучей.
-@export var scan_collision_mask: int = 0x7FFFFFFF
+# По умолчанию игнорируем слой 2, чтобы лидар не попадал в капсулу движения монстра
+# и использовал отдельный LidarProxy-коллайдер.
+const DEFAULT_SCAN_COLLISION_MASK: int = 0x7FFFFFFF & ~(1 << 1)
+@export var scan_collision_mask: int = DEFAULT_SCAN_COLLISION_MASK
 
 # В ручном режиме сканирование запускается только по выстрелу правой кнопкой мыши.
 @export var manual_scan: bool = true
@@ -79,7 +81,6 @@ var _is_scanning: bool = false
 const VISUALIZER_AABB_EXTENTS: Vector3 = Vector3(100.0, 100.0, 100.0)
 
 func _ready() -> void:
-	print("[LidarSystem] ready, autostart=", autostart)
 	point_height_step = clamp(point_height_step, 0.002, 0.02)
 	if _base_point_mesh != null:
 		_base_point_mesh = null
@@ -130,12 +131,10 @@ func can_scan() -> bool:
 
 # Регистрирует узел, от которого пускаются лучи.
 func register_origin(origin: Node3D) -> void:
-	print("[LidarSystem] register_origin origin=", origin)
 	_origin = origin
 
 # Регистрирует узел визуализации точек.
 func register_visualizer(mesh_instance: Node3D) -> void:
-	print("[LidarSystem] register_visualizer mesh_instance=", mesh_instance)
 	if mesh_instance == null:
 		push_warning("LidarSystem.register_visualizer() called with null mesh_instance")
 		return
@@ -195,11 +194,7 @@ func emit_scan() -> void:
 		return
 	var origin_point = _get_scan_origin()
 	var used_rays = manual_ray_count if manual_scan else ray_count
-	print("[LidarSystem] emit_scan: origin=", origin_point, ", mask=", scan_collision_mask, ", rays=", used_rays)
 	var hits = _perform_scan(origin_point, used_rays)
-	print("[LidarSystem] emit_scan: hits=", hits.size())
-	if hits.size() > 0:
-		print("[LidarSystem] first hit position: ", hits[0].position, ", distance: ", (hits[0].position - origin_point).length())
 	for hit in hits:
 		_add_point_cells_from_hit(hit)
 	if manual_scan:
@@ -314,8 +309,6 @@ func _perform_scan(origin_point: Vector3, count_override: int = -1) -> Array:
 				up * sin(elevation) +
 				forward * cos(azimuth) * cos(elevation)
 			).normalized()
-			if ray_index == 0:
-				print("[LidarSystem] ray 0: dir=", direction)
 			var hit = _cast_ray(origin_point, direction)
 			if hit.size() > 0:
 				results.append(hit)
@@ -342,8 +335,6 @@ func _perform_camera_scan(origin_point: Vector3, count_override: int = -1) -> Ar
 		var offset = Vector2(cos(angle) * r, sin(angle) * r)
 		var screen_point = center + offset
 		var direction = camera.project_ray_normal(screen_point).normalized()
-		if ray_index == 0:
-			print("[LidarSystem] ray 0 camera: dir=", direction)
 		var hit = _cast_ray(origin_point, direction)
 		if hit.size() > 0:
 			results.append(hit)
@@ -475,7 +466,6 @@ func update_point_cloud(delta: float) -> void:
 			_hide_instance(multimesh, index)
 	_dirty_indices.clear()
 	_point_cloud_dirty = false
-	print("[LidarSystem] point_cloud_updated count=", _point_cells.size())
 	emit_signal("point_cloud_updated", _point_cells.size())
 
 # Строит материал для точки: один материал на все точки.

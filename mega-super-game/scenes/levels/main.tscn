@@ -1,14 +1,17 @@
 [gd_scene format=4 uid="uid://bkefoo8hqst2e"]
 
 [ext_resource type="MeshLibrary" uid="uid://bjeq2sjfm5i4m" path="res://libs/lib_cols.tres" id="1_72ix8"]
+[ext_resource type="PackedScene" uid="uid://cs8jws7y87yey" path="res://scenes/levels/monster_1.tscn" id="1_rssyh"]
 [ext_resource type="Script" uid="uid://plhhm6r31qhx" path="res://scripts/player/character_body_3d.gd" id="2_px1c8"]
-[ext_resource type="AudioStream" uid="uid://dcu1bwurwyvv1" path="res://assets/Free Footsteps Pack/Concrete 1.wav" id="3_xgklb"]
-[ext_resource type="AudioStream" uid="uid://chyw0u3cn7oc4" path="res://assets/Free Footsteps Pack/Concrete 2.wav" id="4_5wre2"]
 [ext_resource type="Script" uid="uid://ck8m3c34iinkh" path="res://scripts/player/challenger_weapon.gd" id="5_qy6q0"]
 [ext_resource type="Texture2D" uid="uid://bu6swcxur8hwp" path="res://assets/textures/challenger_Base_color.jpg" id="6_ykry0"]
 [ext_resource type="Texture2D" uid="uid://shy0s5bvkm58" path="res://assets/textures/challenger_Roughness.jpg" id="7_im81g"]
 [ext_resource type="Texture2D" uid="uid://bbx83y83of5ui" path="res://assets/textures/challenger_Normal_OpenGL.jpg" id="8_ysjpo"]
 [ext_resource type="PackedScene" uid="uid://ccnp122ald4sb" path="res://scenes/levels/gm_adit_d_2.tscn" id="9_7lrji"]
+[ext_resource type="Script" uid="uid://c4bllgoro4f2u" path="res://scripts/ui/hud.gd" id="9_rssyh"]
+[ext_resource type="Script" uid="uid://oqpgt8rbdw74" path="res://scripts/audio/global_audio.gd" id="10_x1g7p"]
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_rssyh"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.78759766
@@ -418,7 +421,17 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_oc25e")
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_hwp66"]
+size = Vector3(9.544434, 6.2870483, 1)
+
 [node name="Main" type="Node3D" unique_id=1339707678]
+
+[node name="Monster1" parent="." unique_id=166719758 instance=ExtResource("1_rssyh")]
+transform = Transform3D(2.4700005, 0, -7.1054274e-15, 0, 2.4700005, 0, 7.1054274e-15, 0, 2.4700005, 156.53055, 5.1041756, 42.151936)
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="Monster1" unique_id=685557360]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1993438, 0)
+navigation_mesh = SubResource("NavigationMesh_rssyh")
 
 [node name="World" type="Node3D" parent="." unique_id=156342907]
 
@@ -436,7 +449,6 @@ metadata/_editor_floor_ = Vector3(0, 0, 0)
 [node name="Player" type="CharacterBody3D" parent="." unique_id=691322780]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 59.575306, 4.725177, -81.07534)
 script = ExtResource("2_px1c8")
-footstep_streams = Array[AudioStream]([ExtResource("3_xgklb"), ExtResource("4_5wre2")])
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=1751051708]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.48466396, 0)
@@ -456,6 +468,7 @@ current = true
 [node name="weapon" type="Node3D" parent="Player/CameraPivot" unique_id=2071601803]
 transform = Transform3D(-0.0060527287, 0, -0.044591084, 0, 0.045000006, 0, 0.044591084, 0, -0.0060527287, 0.3309446, -0.52935994, -0.52046734)
 script = ExtResource("5_qy6q0")
+max_ammo = 15
 
 [node name="challenger#Cube" type="MeshInstance3D" parent="Player/CameraPivot/weapon" unique_id=415463550]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.3446116, 9.802008, 0)
@@ -534,11 +547,11 @@ metadata/extras = {
 }
 
 [node name="FootstepPlayer" type="AudioStreamPlayer3D" parent="Player" unique_id=1283775370]
-stream = ExtResource("3_xgklb")
 volume_db = -6.0
 unit_size = 12.0
 
 [node name="HUD" type="CanvasLayer" parent="Player" unique_id=2069609940]
+script = ExtResource("9_rssyh")
 
 [node name="Crosshair" type="Control" parent="Player/HUD" unique_id=644325780]
 layout_mode = 3
@@ -572,5 +585,16 @@ offset_left = -1.0
 offset_right = 1.0
 color = Color(0.95, 0.95, 0.95, 0.9)
 
+[node name="GlobalAudio" type="Node" parent="." unique_id=212873451]
+script = ExtResource("10_x1g7p")
+breathing_volume_db = -19.07
+
 [node name="gm_adit_d2" parent="." unique_id=276699901 instance=ExtResource("9_7lrji")]
 transform = Transform3D(0.05, 0, 0, 0, -2.1855695e-09, 0.05, 0, -0.05, -2.1855695e-09, 0, 1.99, -153.86868)
+
+[node name="monster_sound1" type="Area3D" parent="." unique_id=1867225350]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 73.84393, 0, -25.968006)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="monster_sound1" unique_id=876948659]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.099365234, 4.823878, 0)
+shape = SubResource("BoxShape3D_hwp66")

@@ -18,6 +18,12 @@ const FIRE_STREAM: AudioStream = preload("res://assets/JDSherbert - FirearmFX - 
 @export var fire_range := 120.0
 @export var fire_damage := 10.0
 @export var muzzle_offset := Vector3(0.32, -0.2, -0.7)
+# Reserve physics layer 2 for shootable targets; leave the static map on other layers.
+@export var fire_collision_mask: int = 1 << 1
+
+# Ammo
+@export var max_ammo: int = 7
+var current_ammo: int = max_ammo
 
 var _base_position: Vector3
 var _base_rotation: Vector3
@@ -29,6 +35,7 @@ var _player: CharacterBody3D
 var _camera: Camera3D
 var _muzzle: Node3D
 var _muzzle_flash: GPUParticles3D
+signal ammo_changed(current: int, max: int)
 
 
 func _ready() -> void:
@@ -45,6 +52,12 @@ func _ready() -> void:
 	fire_player.unit_size = 12.0
 	fire_player.volume_db = -2.0
 	add_child(fire_player)
+	# Warm up audio/particles to avoid hitch on first shot
+	call_deferred("_warmup_fire_effects")
+
+	# initialize ammo
+	current_ammo = max_ammo
+	emit_signal("ammo_changed", current_ammo, max_ammo)
 
 
 func _process(delta: float) -> void:
@@ -86,6 +99,13 @@ func _update_pose(delta: float) -> void:
 
 
 func _fire() -> void:
+	# Check ammo
+	if current_ammo <= 0:
+		return
+
+	current_ammo -= 1
+	emit_signal("ammo_changed", current_ammo, max_ammo)
+
 	fire_player.pitch_scale = randf_range(0.96, 1.04)
 	fire_player.play()
 	_recoil_position += Vector3(0.0, -RECOIL_UP, RECOIL_BACK)
@@ -93,6 +113,17 @@ func _fire() -> void:
 	_play_muzzle_flash()
 	_fire_hitscan()
 
+
+func get_save_data() -> Dictionary:
+	return {
+		"current_ammo": current_ammo,
+		"max_ammo": max_ammo,
+	}
+
+func apply_save_data(data: Dictionary) -> void:
+	max_ammo = max(1, int(data.get("max_ammo", max_ammo)))
+	current_ammo = clampi(int(data.get("current_ammo", current_ammo)), 0, max_ammo)
+	emit_signal("ammo_changed", current_ammo, max_ammo)
 
 func _find_player() -> CharacterBody3D:
 	var current := get_parent()
@@ -187,6 +218,8 @@ func _play_muzzle_flash() -> void:
 		return
 	_muzzle_flash.restart()
 	_muzzle_flash.emitting = true
+	# stop emitting automatically after short time to avoid lingering
+	call_deferred("_stop_muzzle_emitting")
 
 
 func _fire_hitscan() -> void:
@@ -196,6 +229,8 @@ func _fire_hitscan() -> void:
 	var dir := -_camera.global_transform.basis.z
 	var to := from + dir * fire_range
 	var query := PhysicsRayQueryParameters3D.create(from, to)
+	# Only test the dedicated shootable layer so map geometry does not enter the raycast.
+	query.collision_mask = fire_collision_mask
 	query.exclude = [ self , _player]
 	var result := get_world_3d().direct_space_state.intersect_ray(query)
 	if result.is_empty():
@@ -218,3 +253,35 @@ func _fire_hitscan() -> void:
 		var hit_pos: Vector3 = result.get("position", body.global_transform.origin)
 		var impulse_dir := (to - from).normalized()
 		body.apply_impulse(impulse_dir * fire_damage, hit_pos - body.global_transform.origin)
+
+
+func _stop_muzzle_emitting() -> void:
+	if _muzzle_flash != null:
+		_muzzle_flash.emitting = false
+
+
+func _warmup_fire_effects() -> void:
+	# Play a very quiet sample and a very short particle burst to force resource/decoder/shader compile
+	if fire_player != null and FIRE_STREAM != null:
+		var old_vol = fire_player.volume_db
+		fire_player.volume_db = -80.0
+		fire_player.play()
+		await get_tree().create_timer(0.05).timeout
+		fire_player.stop()
+		fire_player.volume_db = old_vol
+
+	if _muzzle_flash != null:
+		_muzzle_flash.restart()
+		_muzzle_flash.emitting = true
+		await get_tree().create_timer(0.05).timeout
+		_muzzle_flash.emitting = false
+
+	# Warm up physics raycast to avoid first-call overhead
+	if is_instance_valid(_camera):
+		var from := _camera.global_transform.origin
+		var to := from + Vector3(0, 0, -0.1)
+		var q := PhysicsRayQueryParameters3D.create(from, to)
+		q.exclude = [ self , _player]
+		q.collision_mask = fire_collision_mask
+		# run a cheap intersect to initialize native resources
+		get_world_3d().direct_space_state.intersect_ray(q)
