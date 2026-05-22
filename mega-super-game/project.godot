@@ -68,3 +68,26 @@ environment/ssao/quality=3
 anti_aliasing/quality/msaa_3d=2
 scaling_3d/mode=1
 scaling_3d/fsr_sharpness=1.0
+
+[shader_globals]
+
+light_grid_ambient={
+"type": "sampler3D",
+"value": ""
+}
+light_grid_direct={
+"type": "sampler3D",
+"value": ""
+}
+light_grid_cartesian={
+"type": "sampler3D",
+"value": ""
+}
+light_grid_normalize={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+light_grid_offset={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
