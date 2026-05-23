@@ -4,6 +4,7 @@ const GAME_SCENE_PATH := "res://scenes/levels/main.tscn"
 const SETTINGS_WINDOW_SCENE_PATH := "res://scenes/ui/settings_window.tscn"
 const SAVE_SLOTS_WINDOW_SCENE := preload("res://scenes/ui/save_slots_window.tscn")
 const MENU_BACKGROUND := preload("res://assets/menu_background/menu_background.png")
+const CUTSCENE_MANAGER_NODE := "/root/CutsceneManager"
 
 var start_button: Button
 var load_button: Button
@@ -217,13 +218,21 @@ func _on_start_pressed() -> void:
 	if _is_loading:
 		return
 	_is_loading = true
+	var checkpoint_progress := get_node_or_null("/root/CheckpointProgress")
+	if checkpoint_progress != null:
+		checkpoint_progress.call("reset")
 	_set_menu_interactive(false)
 	loading_overlay.visible = true
 	loading_progress.value = 0.0
 	loading_label.text = "LOADING"
+	var cutscene_manager := get_node_or_null(CUTSCENE_MANAGER_NODE)
+	if cutscene_manager != null and cutscene_manager.has_method("request_cutscene"):
+		cutscene_manager.call("request_cutscene")
 	var request_result := ResourceLoader.load_threaded_request(GAME_SCENE_PATH)
 	if request_result != OK:
 		push_error("Failed to start loading game scene: %s" % GAME_SCENE_PATH)
+		if cutscene_manager != null and cutscene_manager.has_method("cancel_cutscene_request"):
+			cutscene_manager.call("cancel_cutscene_request")
 		_is_loading = false
 		_set_menu_interactive(true)
 		loading_overlay.visible = false
@@ -244,12 +253,18 @@ func _process(_delta: float) -> void:
 			get_tree().change_scene_to_packed(resource)
 		else:
 			push_error("Loaded resource is not a PackedScene: %s" % GAME_SCENE_PATH)
+			var cutscene_manager := get_node_or_null(CUTSCENE_MANAGER_NODE)
+			if cutscene_manager != null and cutscene_manager.has_method("cancel_cutscene_request"):
+				cutscene_manager.call("cancel_cutscene_request")
 			_is_loading = false
 			_set_menu_interactive(true)
 			loading_overlay.visible = false
 		set_process(false)
 	elif status == ResourceLoader.THREAD_LOAD_FAILED or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
 		push_error("Failed to load game scene: %s" % GAME_SCENE_PATH)
+		var cutscene_manager := get_node_or_null(CUTSCENE_MANAGER_NODE)
+		if cutscene_manager != null and cutscene_manager.has_method("cancel_cutscene_request"):
+			cutscene_manager.call("cancel_cutscene_request")
 		_is_loading = false
 		_set_menu_interactive(true)
 		loading_overlay.visible = false

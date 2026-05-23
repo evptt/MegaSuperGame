@@ -74,7 +74,7 @@ class BTAction extends BTNode:
 
 @export var detection_radius: float = 18.0
 @export var lose_interest_radius: float = 26.0
-@export var attack_range: float = 2.8
+@export var attack_range: float = 5.5
 @export var attack_damage: float = 15.0
 @export var attack_cooldown_time: float = 4.0
 @export var target_memory_time: float = 4.0
@@ -97,6 +97,9 @@ class BTAction extends BTNode:
 @onready var _navigation_agent: NavigationAgent3D = get_node_or_null("NavigationAgent3D") as NavigationAgent3D
 @onready var _detection_area: Area3D = get_node_or_null("Area3D") as Area3D
 
+@export var roar_stream: AudioStream
+@export var roar_volume_db: float = -4.0
+
 var _root: BTNode
 var _health: float = 0.0
 var _home_position: Vector3
@@ -106,6 +109,8 @@ var _has_last_known_position := false
 var _target_memory_left := 0.0
 var _alert_cooldown_left := 0.0
 var _attack_cooldown_left := 0.0
+var _roar_player: AudioStreamPlayer3D = null
+var _roar_cooldown_left: float = 0.0
 var _flee_left := 0.0
 var _search_wait_left := 0.0
 var _patrol_wait_left := 0.0
@@ -117,6 +122,12 @@ var _is_player_in_detection := false
 var _awake := false
 var _behavior: int = Behavior.PATROL
 var _rng := RandomNumberGenerator.new()
+var _can_see_player_cached := false
+var _can_see_player_timer := 0.0
+const VISION_CHECK_INTERVAL := 0.2
+var _player_search_timer := 0.0
+const PLAYER_SEARCH_INTERVAL := 2.0
+const DEBUG_MONSTER_COMBAT := true
 
 
 func _ready() -> void:
@@ -127,6 +138,7 @@ func _ready() -> void:
 	_awake = start_awake
 	_build_behavior_tree()
 	_bind_detection_area()
+	_setup_roar_player()
 	_request_next_patrol_target(true)
 	_add_to_monster_group()
 
@@ -138,6 +150,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_timers(delta)
 	_refresh_player()
+	_try_play_roar()
 	_update_senses()
 	if _root != null:
 		_root.tick(self )
@@ -152,18 +165,26 @@ func _update_timers(delta: float) -> void:
 		_alert_cooldown_left = maxf(0.0, _alert_cooldown_left - delta)
 	if _attack_cooldown_left > 0.0:
 		_attack_cooldown_left = maxf(0.0, _attack_cooldown_left - delta)
+	if _roar_cooldown_left > 0.0:
+		_roar_cooldown_left = maxf(0.0, _roar_cooldown_left - delta)
 	if _flee_left > 0.0:
 		_flee_left = maxf(0.0, _flee_left - delta)
 	if _search_wait_left > 0.0:
 		_search_wait_left = maxf(0.0, _search_wait_left - delta)
 	if _patrol_wait_left > 0.0:
 		_patrol_wait_left = maxf(0.0, _patrol_wait_left - delta)
+	_can_see_player_timer = maxf(0.0, _can_see_player_timer - delta)
+	_player_search_timer = maxf(0.0, _player_search_timer - delta)
 
 
 func _refresh_player() -> void:
 	if is_instance_valid(_player):
 		return
+	# Только переискиваем периодически, не каждый кадр
+	if _player_search_timer > 0.0:
+		return
 	_player = _find_player()
+	_player_search_timer = PLAYER_SEARCH_INTERVAL
 
 
 func _update_senses() -> void:
@@ -255,7 +276,12 @@ func _bt_has_threat_memory(_actor = null) -> bool:
 
 
 func _bt_can_see_player(_actor = null) -> bool:
-	return is_instance_valid(_player) and _can_see_player()
+	if not is_instance_valid(_player):
+		return false
+	if _can_see_player_timer <= 0.0:
+		_can_see_player_cached = _can_see_player()
+		_can_see_player_timer = VISION_CHECK_INTERVAL
+	return _can_see_player_cached
 
 
 func _bt_player_in_attack_range(_actor = null) -> bool:
@@ -273,7 +299,8 @@ func _bt_alert_allies(_actor = null) -> int:
 
 func _bt_attack(_actor = null) -> int:
 	_behavior = Behavior.ATTACK
-	if not is_instance_valid(_player):
+	var target := _resolve_player_target()
+	if not is_instance_valid(target):
 		return BT_FAILURE
 
 	if _flat_distance_to_player() > attack_range:
@@ -297,18 +324,17 @@ func _bt_chase(_actor = null) -> int:
 		_last_known_player_position = _player.global_position
 		_has_last_known_position = true
 		_target_memory_left = target_memory_time
-		if _navigation_agent != null:
+		# Only update navigation target if player moved significantly
+		if _navigation_agent != null and _navigation_agent.target_position.distance_to(_player.global_position) > 2.5:
 			_navigation_agent.target_position = _player.global_position
 
-		if _bt_player_in_attack_range() and _attack_cooldown_left <= 0.0:
-			return BT_SUCCESS
-
-		if _can_see_player():
+		if _bt_can_see_player():
 			_alert_once(_player.global_position)
 			return BT_RUNNING
 
 	if _has_last_known_position and _navigation_agent != null:
-		_navigation_agent.target_position = _last_known_player_position
+		if _navigation_agent.target_position.distance_to(_last_known_player_position) > 1.0:
+			_navigation_agent.target_position = _last_known_player_position
 
 	return BT_RUNNING
 
@@ -382,7 +408,7 @@ func _apply_movement(delta: float) -> void:
 		_:
 			active_speed = 0.0
 
-	if active_speed <= 0.0:
+	if active_speed <= 0.0 or target_position.distance_to(global_position) > 500.0:
 		velocity.x = move_toward(velocity.x, 0.0, 40.0 * delta)
 		velocity.z = move_toward(velocity.z, 0.0, 40.0 * delta)
 	else:
@@ -407,10 +433,21 @@ func _apply_movement(delta: float) -> void:
 func _next_navigation_step(target_position: Vector3) -> Vector3:
 	if _navigation_agent == null:
 		return target_position
-	if _navigation_agent.is_navigation_finished() or _navigation_agent.target_position != target_position:
+	
+	# Update target only if it has moved enough to justify path recompute
+	if _navigation_agent.target_position.distance_to(target_position) > 2.0:
 		_navigation_agent.target_position = target_position
+	
+	# Safety checks for broken navigation
+	if _navigation_agent.is_navigation_finished():
+		return target_position
+	
+	var final_pos := _navigation_agent.get_final_position()
+	if final_pos.distance_to(global_position) > 500.0:
+		return target_position
+	
 	var next_position := _navigation_agent.get_next_path_position()
-	if next_position.distance_to(global_position) <= 0.05 and global_position.distance_to(target_position) > 0.1:
+	if next_position.distance_to(global_position) <= 0.05 and global_position.distance_to(target_position) > 0.5:
 		return target_position
 	return next_position
 
@@ -430,6 +467,30 @@ func _bind_detection_area() -> void:
 		_detection_area.body_entered.connect(_on_detection_body_entered)
 	if not _detection_area.body_exited.is_connected(_on_detection_body_exited):
 		_detection_area.body_exited.connect(_on_detection_body_exited)
+
+func _setup_roar_player() -> void:
+	_roar_player = get_node_or_null("RoarPlayer") as AudioStreamPlayer3D
+	if _roar_player == null:
+		_roar_player = AudioStreamPlayer3D.new()
+		_roar_player.name = "RoarPlayer"
+		add_child(_roar_player)
+	if roar_stream == null:
+		var default_roar := load("res://assets/sounds/alien/alien_roar.wav")
+		if default_roar != null:
+			roar_stream = default_roar
+	if _roar_player != null:
+		_roar_player.stream = roar_stream
+		_roar_player.volume_db = roar_volume_db
+		_roar_player.autoplay = false
+
+func _try_play_roar() -> void:
+	if not _awake or _health <= 0.0 or _roar_cooldown_left > 0.0:
+		return
+	if _roar_player == null or _roar_player.stream == null:
+		return
+	if not _roar_player.playing:
+		_roar_player.play()
+		_roar_cooldown_left = 1.5
 
 
 func _on_detection_body_entered(body: Node) -> void:
@@ -460,7 +521,19 @@ func _can_see_player() -> bool:
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
 		return true
-	return hit.get("collider") == _player
+
+	var collider: Object = hit.get("collider")
+	if collider == _player:
+		return true
+	if collider is Node:
+		var node := collider as Node
+		if node.is_in_group("player"):
+			return true
+		while node != null:
+			if node == _player:
+				return true
+			node = node.get_parent()
+	return false
 
 
 func _alert_once(source_position: Vector3) -> void:
@@ -528,20 +601,42 @@ func _find_player() -> Node3D:
 	return node as Node3D
 
 
+func _resolve_player_target() -> Node3D:
+	if is_instance_valid(_player):
+		return _player
+	_player = _find_player()
+	return _player
+
+
 func _apply_damage_to_player(amount: float) -> void:
-	if not is_instance_valid(_player):
+	var player_target := _player
+	if not is_instance_valid(player_target):
+		player_target = _find_player()
+	if not is_instance_valid(player_target):
+		push_warning("Monster cannot apply damage: player reference is invalid")
 		return
 
-	if _player.has_method("apply_damage"):
-		_player.call("apply_damage", amount)
+	if DEBUG_MONSTER_COMBAT:
+		print("[Monster] applying damage to", player_target.name, "amount=", amount, "has_apply=", player_target.has_method("apply_damage"))
+
+	if player_target.has_method("apply_damage"):
+		player_target.call("apply_damage", amount)
 		return
 
-	if "health" in _player:
-		var current_health := float(_player.get("health"))
+	if player_target is Node:
+		var target_with_damage := _find_damage_target(player_target)
+		if target_with_damage != null:
+			if DEBUG_MONSTER_COMBAT:
+				print("[Monster] applying damage via target", target_with_damage.name)
+			target_with_damage.call("apply_damage", amount)
+			return
+
+	if "health" in player_target:
+		var current_health := float(player_target.get("health"))
 		current_health = maxf(0.0, current_health - amount)
-		_player.set("health", current_health)
-		if _player.has_method("_emit_health_changed"):
-			_player.call("_emit_health_changed")
+		player_target.set("health", current_health)
+		if player_target.has_method("_emit_health_changed"):
+			player_target.call("_emit_health_changed")
 
 
 func _flat_distance_to_player() -> float:
@@ -550,6 +645,21 @@ func _flat_distance_to_player() -> float:
 	var delta := _player.global_position - global_position
 	delta.y = 0.0
 	return delta.length()
+
+func _find_damage_target(node: Node) -> Node:
+	if node == null:
+		return null
+	if node.has_method("apply_damage"):
+		return node
+	for child in node.get_children():
+		if child is Node and child.has_method("apply_damage"):
+			return child
+	var parent := node.get_parent()
+	while parent != null:
+		if parent.has_method("apply_damage"):
+			return parent
+		parent = parent.get_parent()
+	return null
 
 
 func get_save_data() -> Dictionary:

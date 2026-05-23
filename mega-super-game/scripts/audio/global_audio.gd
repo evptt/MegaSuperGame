@@ -38,7 +38,12 @@ func _setup_players() -> void:
 	_breathing_player = _ensure_player("BreathingPlayer")
 	_lidar_scan_player = _ensure_player("LidarScanPlayer")
 	_random_sounds_player = _ensure_player("RandomSoundsPlayer")
+	
+	# Connect finished signals for looping background sounds
+	_ambient_player.finished.connect(_on_ambient_finished)
+	_breathing_player.finished.connect(_on_breathing_finished)
 	_random_sounds_player.finished.connect(_on_random_sound_finished)
+	
 	_random_sound_timer = _ensure_timer("RandomSoundTimer")
 	_random_sound_timer.one_shot = true
 	_random_sound_timer.timeout.connect(_on_random_sound_timer_timeout)
@@ -158,6 +163,16 @@ func stop_lidar_scan() -> void:
 func _on_lidar_scan_finished() -> void:
 	if _lidar_scan_active and _lidar_scan_player != null and _lidar_scan_player.stream != null:
 		_lidar_scan_player.play()
+
+
+func _on_ambient_finished() -> void:
+	if _ambient_player != null and _ambient_player.stream != null:
+		_ambient_player.play()
+
+
+func _on_breathing_finished() -> void:
+	if _breathing_player != null and _breathing_player.stream != null:
+		_breathing_player.play()
 
 
 func _on_random_sound_finished() -> void:

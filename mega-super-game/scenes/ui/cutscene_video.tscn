@@ -1,0 +1,8 @@
+[gd_scene load_steps=1 format=2]
+
+[ext_resource path="res://assets/sounds/cutscene.ogv" type="VideoStreamTheora" id=1]
+
+[node name="CutsceneVideo" type="VideoPlayer"]
+stream = ExtResource( 1 )
+autoplay = false
+volume_db = 0.0

@@ -27,6 +27,8 @@ var ammo_label: Label
 var divider_line: ColorRect
 var lidar_title_label: Label
 var lidar_label: Label
+var hit_overlay: ColorRect
+var _player: CharacterBody3D = null
 
 func _ready() -> void:
 	layer = 10
@@ -34,6 +36,13 @@ func _ready() -> void:
 	layout_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layout_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(layout_root)
+
+	hit_overlay = ColorRect.new()
+	hit_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hit_overlay.color = Color(1, 0, 0, 0.0)
+	hit_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hit_overlay.visible = false
+	add_child(hit_overlay)
 
 	goal_label = _make_label("GOAL: Find escape")
 	health_title_label = _make_label("HEALTH")
@@ -59,7 +68,10 @@ func _ready() -> void:
 		viewport.connect("size_changed", Callable(self , "_update_layout"))
 
 	var player := _find_player()
+	if player == null:
+		player = _find_player_in_current_scene()
 	if player != null:
+		_player = player
 		if player.has_signal("health_changed") and not player.is_connected("health_changed", Callable(self , "_on_health_changed")):
 			player.connect("health_changed", Callable(self , "_on_health_changed"))
 		if player.has_signal("stamina_changed") and not player.is_connected("stamina_changed", Callable(self , "_on_stamina_changed")):
@@ -68,6 +80,8 @@ func _ready() -> void:
 			player.connect("lidar_mode_changed", Callable(self , "_on_lidar_mode_changed"))
 		_on_health_changed(player.health, player.max_health)
 		_on_stamina_changed(player.stamina, player.max_stamina)
+	else:
+		print("[HUD] Warning: Player node not found for HUD health/stamina updates")
 
 	_connect_weapon_ammo()
 
@@ -107,12 +121,37 @@ func _make_divider() -> ColorRect:
 	return line
 
 
+func set_goal(text: String) -> void:
+	if goal_label == null:
+		return
+	goal_label.text = "GOAL: %s" % text
+
+
 func _find_player() -> CharacterBody3D:
 	var players := get_tree().get_nodes_in_group("player")
 	if players.is_empty():
 		return null
 	return players[0] as CharacterBody3D
 
+func flash_damage() -> void:
+	if hit_overlay == null:
+		return
+	hit_overlay.visible = true
+	hit_overlay.color = Color(1, 0, 0, 0.35)
+	await get_tree().create_timer(0.05).timeout
+	if hit_overlay != null:
+		hit_overlay.color = Color(1, 0, 0, 0.0)
+		hit_overlay.visible = false
+
+
+func _find_player_in_current_scene() -> CharacterBody3D:
+	var scene_root := get_tree().get_current_scene()
+	if scene_root == null:
+		return null
+	var player := scene_root.get_node_or_null("Player")
+	if player != null and player is CharacterBody3D:
+		return player as CharacterBody3D
+	return null
 
 func _connect_weapon_ammo() -> void:
 	var root := get_tree().get_current_scene()

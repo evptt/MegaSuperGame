@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bdjnngl5eolu8"]
+
+[ext_resource type="Script" uid="uid://c1neakdt02poi" path="res://scripts/levels/monster_sound_area.gd" id="1_dxfmj"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hwp66"]
+size = Vector3(9.544434, 6.2870483, 1)
+
+[node name="monster_sound1" type="Area3D" unique_id=1754556780]
+script = ExtResource("1_dxfmj")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2120292753]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.099365234, 4.823878, 0)
+shape = SubResource("BoxShape3D_hwp66")

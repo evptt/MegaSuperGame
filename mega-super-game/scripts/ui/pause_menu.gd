@@ -152,26 +152,34 @@ func _show_pause_menu() -> void:
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_update_layout()
+	title_label.text = "PAUSE"
 	continue_button.visible = true
 	continue_button.disabled = false
+	save_button.text = "SAVE GAME"
 	if continue_button.visible:
 		continue_button.grab_focus()
 
 
 func show_death_menu() -> void:
+	print("[PauseMenu] show_death_menu called")
 	_is_death_menu = true
 	_visible_menu = true
 	panel_root.visible = true
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_update_layout()
+	title_label.text = "YOU DIED"
 	continue_button.visible = false
 	continue_button.disabled = true
+	save_button.text = "LOAD GAME"
+	save_button.disabled = false
 	if exit_menu_button.visible:
 		exit_menu_button.grab_focus()
 
 
 func _resume_game() -> void:
+	if _is_death_menu:
+		return
 	_visible_menu = false
 	panel_root.visible = false
 	get_tree().paused = false
@@ -180,13 +188,19 @@ func _resume_game() -> void:
 
 func _open_save_slots_window() -> void:
 	if _save_slots_window != null and is_instance_valid(_save_slots_window):
-		_save_slots_window.call("open_save_mode")
+		if _is_death_menu:
+			_save_slots_window.call("open_load_mode")
+		else:
+			_save_slots_window.call("open_save_mode")
 		return
 	var window := SAVE_SLOTS_WINDOW_SCENE.instantiate() as CanvasLayer
 	_save_slots_window = window
 	window.tree_exited.connect(_on_save_slots_window_closed)
 	get_tree().current_scene.add_child(window)
-	window.call("open_save_mode")
+	if _is_death_menu:
+		window.call("open_load_mode")
+	else:
+		window.call("open_save_mode")
 
 
 func _on_save_slots_window_closed() -> void:

@@ -78,7 +78,7 @@ var _base_point_mesh: Mesh
 var _scan_timer: float = 0.0
 var _manual_scan_timer: float = 0.0
 var _is_scanning: bool = false
-const VISUALIZER_AABB_EXTENTS: Vector3 = Vector3(100.0, 100.0, 100.0)
+const VISUALIZER_AABB_EXTENTS: Vector3 = Vector3(1000.0, 1000.0, 1000.0)
 
 func _ready() -> void:
 	point_height_step = clamp(point_height_step, 0.002, 0.02)
@@ -368,21 +368,33 @@ func _get_point_color(collider: Object) -> Color:
 	if collider is Node:
 		var node = collider as Node
 		
-		# Check if this collider or any parent is named "floor".
-		# Avoid class-based GridMap detection so GridMap2 (ceiling) is not treated as floor.
+		# Check if this collider or any parent is a monster
 		var current = node
-		var is_floor = false
+		var is_monster = false
 		while current != null:
-			if current.is_in_group("floor"):
-				is_floor = true
-				break
-			if current.name.to_lower() == "floor":
-				is_floor = true
+			if current.is_in_group("monsters"):
+				is_monster = true
 				break
 			current = current.get_parent()
 		
-		if is_floor:
-			base_color = Color(0.25, 0.175, 0.025) # Very muted orange (25% of normal)
+		if is_monster:
+			base_color = Color(0.25, 0.05, 0.05) # Very muted red (25% of normal)
+		else:
+			# Check if this collider or any parent is named "floor".
+			# Avoid class-based GridMap detection so GridMap2 (ceiling) is not treated as floor.
+			var floor_check = node
+			var is_floor = false
+			while floor_check != null:
+				if floor_check.is_in_group("floor"):
+					is_floor = true
+					break
+				if floor_check.name.to_lower() == "floor":
+					is_floor = true
+					break
+				floor_check = floor_check.get_parent()
+			
+			if is_floor:
+				base_color = Color(0.25, 0.175, 0.025) # Very muted orange (25% of normal)
 	
 	# Add color variation with increased contrast
 	var variation = randi() % 3

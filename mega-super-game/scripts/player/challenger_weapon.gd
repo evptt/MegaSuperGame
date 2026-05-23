@@ -23,11 +23,14 @@ const FIRE_STREAM: AudioStream = preload("res://assets/JDSherbert - FirearmFX - 
 
 # Ammo
 @export var max_ammo: int = 7
+@export var reserve_ammo: int = 49
+@export var reload_time: float = 1.0
 var current_ammo: int = max_ammo
 
 var _base_position: Vector3
 var _base_rotation: Vector3
 var _cooldown := 0.0
+var _reload_time_left := 0.0
 var _bob_time := 0.0
 var _recoil_position := Vector3.ZERO
 var _recoil_rotation := Vector3.ZERO
@@ -35,7 +38,7 @@ var _player: CharacterBody3D
 var _camera: Camera3D
 var _muzzle: Node3D
 var _muzzle_flash: GPUParticles3D
-signal ammo_changed(current: int, max: int)
+signal ammo_changed(current: int, reserve: int)
 
 
 func _ready() -> void:
@@ -57,18 +60,29 @@ func _ready() -> void:
 
 	# initialize ammo
 	current_ammo = max_ammo
-	emit_signal("ammo_changed", current_ammo, max_ammo)
+	emit_signal("ammo_changed", current_ammo, reserve_ammo)
 
 
 func _process(delta: float) -> void:
 	if _cooldown > 0.0:
 		_cooldown = maxf(0.0, _cooldown - delta)
+	if _reload_time_left > 0.0:
+		_reload_time_left = maxf(0.0, _reload_time_left - delta)
+		if _reload_time_left == 0.0:
+			_finish_reload()
 
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and _cooldown <= 0.0:
+	if _reload_time_left <= 0.0 and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and _cooldown <= 0.0:
 		_fire()
 		_cooldown = FIRE_INTERVAL
 
 	_update_pose(delta)
+
+
+func _input(event: InputEvent) -> void:
+	if _reload_time_left > 0.0:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
+		_start_reload()
 
 
 func _update_pose(delta: float) -> void:
@@ -104,7 +118,7 @@ func _fire() -> void:
 		return
 
 	current_ammo -= 1
-	emit_signal("ammo_changed", current_ammo, max_ammo)
+	emit_signal("ammo_changed", current_ammo, reserve_ammo)
 
 	fire_player.pitch_scale = randf_range(0.96, 1.04)
 	fire_player.play()
@@ -114,16 +128,40 @@ func _fire() -> void:
 	_fire_hitscan()
 
 
+func _start_reload() -> void:
+	if _reload_time_left > 0.0:
+		return
+	if current_ammo >= max_ammo:
+		return
+	if reserve_ammo <= 0:
+		return
+
+	_reload_time_left = reload_time
+
+
+func _finish_reload() -> void:
+	if current_ammo >= max_ammo or reserve_ammo <= 0:
+		return
+
+	var needed: int = max_ammo - current_ammo
+	var loaded: int = min(needed, reserve_ammo)
+	current_ammo += loaded
+	reserve_ammo -= loaded
+	emit_signal("ammo_changed", current_ammo, reserve_ammo)
+
+
 func get_save_data() -> Dictionary:
 	return {
 		"current_ammo": current_ammo,
 		"max_ammo": max_ammo,
+		"reserve_ammo": reserve_ammo,
 	}
 
 func apply_save_data(data: Dictionary) -> void:
 	max_ammo = max(1, int(data.get("max_ammo", max_ammo)))
 	current_ammo = clampi(int(data.get("current_ammo", current_ammo)), 0, max_ammo)
-	emit_signal("ammo_changed", current_ammo, max_ammo)
+	reserve_ammo = max(0, int(data.get("reserve_ammo", reserve_ammo)))
+	emit_signal("ammo_changed", current_ammo, reserve_ammo)
 
 func _find_player() -> CharacterBody3D:
 	var current := get_parent()

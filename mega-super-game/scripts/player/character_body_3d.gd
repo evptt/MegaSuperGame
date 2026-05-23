@@ -3,6 +3,7 @@ extends CharacterBody3D
 @onready var camera: Camera3D = get_node_or_null("CameraPivot/Camera3D")
 @onready var footstep_player: AudioStreamPlayer3D = $FootstepPlayer
 
+const DEBUG_PLAYER_DAMAGE := true
 
 const SPEED = 7.0
 const JUMP_VELOCITY = 5.5
@@ -28,12 +29,14 @@ var lidar_mode_index: int = 0
 @export var max_camera_pitch_degrees := 89.0
 @export var step_interval: float = 0.45
 @export var footstep_streams: Array[AudioStream] = []
+@export var punch_stream: AudioStream
 
 const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 
-var _pause_menu: Control = null
+var _pause_menu: CanvasLayer = null
 var _global_audio: Node = null
 var _settings_system: Node = null
+var _punch_player: AudioStreamPlayer = null
 
 var _step_timer = 0.0
 var _step_index = 0
@@ -67,6 +70,7 @@ func _ready() -> void:
 	_settings_system = _get_settings_system()
 	_apply_mouse_sensitivity_from_settings()
 	_connect_settings_signals()
+	_setup_damage_feedback()
 	if camera == null:
 		return
 	if _lidar_system != null:
@@ -99,11 +103,14 @@ func _setup_pause_menu() -> void:
 	if scene_root == null:
 		return
 	var pause_node := scene_root.get_node_or_null("PauseMenu")
+	print("[Player] _setup_pause_menu existing=", pause_node)
 	if pause_node == null:
 		pause_node = PAUSE_MENU_SCENE.instantiate()
 		pause_node.name = "PauseMenu"
+		# Parent may be busy during scene setup; defer adding to avoid "Parent node is busy" error
 		scene_root.call_deferred("add_child", pause_node)
-	_pause_menu = pause_node as Control
+	_pause_menu = pause_node as CanvasLayer
+	print("[Player] _setup_pause_menu _pause_menu=", _pause_menu)
 
 
 func _get_global_audio() -> Node:
@@ -116,6 +123,23 @@ func _get_global_audio() -> Node:
 func _get_settings_system() -> Node:
 	return get_node_or_null("/root/SettingsSystem")
 
+func _setup_damage_feedback() -> void:
+	_punch_player = _ensure_audio_player("PunchPlayer")
+	if punch_stream == null:
+		var default_punch := load("res://assets/sounds/punch.wav")
+		if default_punch != null:
+			punch_stream = default_punch
+	if _punch_player != null:
+		_punch_player.stream = punch_stream
+		_punch_player.volume_db = -4.0
+
+func _ensure_audio_player(player_name: String) -> AudioStreamPlayer:
+	var player := get_node_or_null(player_name) as AudioStreamPlayer
+	if player == null:
+		player = AudioStreamPlayer.new()
+		player.name = player_name
+		add_child(player)
+	return player
 
 func _connect_settings_signals() -> void:
 	if _settings_system == null:
@@ -258,12 +282,29 @@ func _update_hud_stamina() -> void:
 func _emit_health_changed() -> void:
 	emit_signal("health_changed", health, max_health)
 
+func _play_punch_sound() -> void:
+	if _punch_player == null or _punch_player.stream == null:
+		return
+	_punch_player.play()
+
+func _flash_damage() -> void:
+	if _hud_node != null and _hud_node.has_method("flash_damage"):
+		_hud_node.call("flash_damage")
+
 func apply_damage(amount: float) -> void:
 	if amount <= 0.0 or _is_dead:
 		return
 
+	if DEBUG_PLAYER_DAMAGE:
+		print("[Player] apply_damage", amount, "before=", health)
+
 	health = clampf(health - amount, 0.0, max_health)
 	_emit_health_changed()
+	_play_punch_sound()
+	_flash_damage()
+
+	if DEBUG_PLAYER_DAMAGE:
+		print("[Player] health after=", health)
 
 	if health <= 0.0:
 		_on_player_died()
@@ -274,10 +315,19 @@ func _on_player_died() -> void:
 
 	_is_dead = true
 	health = 0.0
+	print("[Player] died, _pause_menu=", _pause_menu)
+
+	if _pause_menu == null:
+		_setup_pause_menu()
 
 	if _pause_menu != null and _pause_menu.has_method("show_death_menu"):
-		_pause_menu.call("show_death_menu")
+		# show_death_menu may need the node to be in the tree; defer the call to be safe
+		_pause_menu.call_deferred("show_death_menu")
+		print("[Player] requested death menu (deferred)")
 		return
+
+	get_tree().paused = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
