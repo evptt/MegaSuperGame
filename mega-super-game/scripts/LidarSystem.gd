@@ -10,14 +10,14 @@ signal scan_stopped()
 @export var autostart: bool = true
 
 # Пауза между ударами лидарного импульса.
-@export var pulse_interval: float = 0.3
+@export var pulse_interval: float = 0.24
 
-# Количество рейкастов в одном импульсе. 300 по умолчанию, максимум 2000.
-@export var ray_count: int = 300
+# Количество рейкастов в одном импульсе. 600 по умолчанию, максимум 2000.
+@export var ray_count: int = 800
 
 
 # Радиус сканирования лидаром.
-@export var scan_distance: float = 40.0
+@export var scan_distance: float = 65.0
 
 # Горизонтальный и вертикальный угол обзора в градусах.
 @export var scan_angle_horizontal: float = 180.0
@@ -33,19 +33,19 @@ signal scan_stopped()
 @export var point_offset: float = 0.12
 
 # Размер ячейки для агрегации точек. Одна ячейка = одна метка.
-@export var point_cell_size: float = 0.1
+@export var point_cell_size: float = 0.08
 
 
 # Вертикальный шаг для дополнительного смещения точек по высоте.
-@export var point_height_step: float = 0.02
+@export var point_height_step: float = 0.0
 
 # Максимальное количество меток, чтобы не создавать фреймдропы.
-@export var max_point_cells: int = 50000
+@export var max_point_cells: int = 65000
 
 # Параметры дистанционного затемнения.
 @export var fog_start: float = 0.3
 @export var fog_end: float = 15.0
-@export var enable_fog: bool = true
+@export var enable_fog: bool = false
 
 # Маска коллизий для лидарных лучей.
 # По умолчанию игнорируем слой 2, чтобы лидар не попадал в капсулу движения монстра

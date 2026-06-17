@@ -15,7 +15,7 @@
 
 [sub_resource type="Environment" id="Environment_2xkjh"]
 background_mode = 1
-background_color = Color(0.04755766, 0.047557645, 0.047557645, 1)
+background_color = Color(0.043039158, 0.04303915, 0.04303915, 1)
 ambient_light_source = 1
 reflected_light_source = 1
 
@@ -586,6 +586,7 @@ color = Color(0.95, 0.95, 0.95, 0.9)
 
 [node name="GlobalAudio" type="Node" parent="." unique_id=212873451]
 script = ExtResource("10_x1g7p")
+breathing_volume_db = -20.0
 
 [node name="gm_adit_d2" parent="." unique_id=276699901 instance=ExtResource("9_7lrji")]
 transform = Transform3D(0.05, 0, 0, 0, -2.1855695e-09, 0.05, 0, -0.05, -2.1855695e-09, 0, 1.99, -153.86868)
@@ -613,17 +614,14 @@ visible = false
 
 [node name="Checkpoint1" type="Area3D" parent="." unique_id=1817282624]
 transform = Transform3D(10.17, 0, 0, 0, 10.17, 0, 0, 0, 10.17, 106.19963, 3.5991755, 126.46033)
-visible = false
 script = ExtResource("12_ckpt")
-checkpoint_index = 1
 goal_text = "Turn on power"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Checkpoint1" unique_id=368951764]
 shape = SubResource("BoxShape3D_hwp66")
 
 [node name="Checkpoint2" type="Area3D" parent="." unique_id=1187694232]
-transform = Transform3D(10.17, 0, 0, 0, 10.17, 0, 0, 0, 10.17, 39.85727, 3.5991755, 126.46033)
-visible = false
+transform = Transform3D(4.56, 0, 0, 0, 4.56, 0, 0, 0, 4.56, 122.96647, 22.267622, 110.831116)
 script = ExtResource("12_ckpt")
 checkpoint_index = 2
 goal_text = "Escape from facility"
@@ -633,7 +631,6 @@ shape = SubResource("BoxShape3D_hwp66")
 
 [node name="Checkpoint3" type="Area3D" parent="." unique_id=1396101225]
 transform = Transform3D(4.43, 0, 0, 0, 4.43, 0, 0, 0, 4.43, 106.79124, 3.5991755, 138.94502)
-visible = false
 script = ExtResource("12_ckpt")
 checkpoint_index = 3
 goal_text = "Escape from facility"

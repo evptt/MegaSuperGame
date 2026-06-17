@@ -44,6 +44,7 @@ var _right_click_pressed = false
 var _lidar_system: Object = null
 var _hud_instanced := false
 var _hud_node: Node = null
+signal scan_started()
 
 func _ready() -> void:
 	set_process_input(true)
@@ -175,7 +176,7 @@ func _input(event: InputEvent) -> void:
 
 		# Toggle lidar mode on E key press
 		if event is InputEventKey and event.pressed and not event.echo:
-			if event.scancode == KEY_E:
+			if event.physical_keycode == KEY_E:
 				_toggle_lidar_mode()
 
 func _emit_lidar_scan() -> void:
@@ -203,6 +204,7 @@ func _physics_process(delta: float) -> void:
 
 	if right_pressed:
 		if not _right_click_pressed:
+			scan_started.emit()
 			_start_lidar_scan_audio()
 		_emit_lidar_scan()
 		_right_click_pressed = true

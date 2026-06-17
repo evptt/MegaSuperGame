@@ -129,6 +129,12 @@ func _end_cutscene(overlay: Node) -> void:
     _skip_timer = 0.0
     _space_press_count = 0
 
+    var scene_root := get_tree().current_scene
+    if scene_root != null:
+        var hud := scene_root.get_node_or_null("Player/HUD")
+        if hud != null and hud.has_method("start_intro_tutorial"):
+            hud.call_deferred("start_intro_tutorial")
+
 
 func _freeze_game() -> void:
     var players := get_tree().get_nodes_in_group("player")

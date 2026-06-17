@@ -12,10 +12,13 @@ var _triggered := false
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 
 
 func _on_body_entered(body: Node) -> void:
 	if _triggered:
+		if checkpoint_index == 2:
+			_show_power_hint()
 		return
 	if body == null or not body.is_in_group("player"):
 		return
@@ -24,11 +27,21 @@ func _on_body_entered(body: Node) -> void:
 		return
 
 	_triggered = true
-	monitoring = false
 	progress.call("advance")
 	_update_goal()
+	if checkpoint_index == 2:
+		_show_power_hint()
+	_show_story_hint()
 	if is_final_checkpoint:
 		await _run_victory_sequence()
+
+
+func _on_body_exited(body: Node) -> void:
+	if body == null or not body.is_in_group("player"):
+		return
+	if checkpoint_index != 2:
+		return
+	_hide_power_hint()
 
 
 func _update_goal() -> void:
@@ -42,6 +55,39 @@ func _update_goal() -> void:
 	var hud := scene_root.get_node_or_null("Player/HUD")
 	if hud != null and hud.has_method("set_goal"):
 		hud.call("set_goal", goal_text)
+
+
+func _show_story_hint() -> void:
+	var scene_root := get_tree().current_scene
+	if scene_root == null:
+		return
+	var hud := scene_root.get_node_or_null("Player/HUD")
+	if hud == null:
+		return
+	if hud.has_method("show_checkpoint_story_hint"):
+		hud.call("show_checkpoint_story_hint", checkpoint_index)
+
+
+func _show_power_hint() -> void:
+	var scene_root := get_tree().current_scene
+	if scene_root == null:
+		return
+	var hud := scene_root.get_node_or_null("Player/HUD")
+	if hud == null:
+		return
+	if hud.has_method("show_power_activation_hint"):
+		hud.call("show_power_activation_hint")
+
+
+func _hide_power_hint() -> void:
+	var scene_root := get_tree().current_scene
+	if scene_root == null:
+		return
+	var hud := scene_root.get_node_or_null("Player/HUD")
+	if hud == null:
+		return
+	if hud.has_method("hide_power_activation_hint"):
+		hud.call("hide_power_activation_hint")
 
 
 func _run_victory_sequence() -> void:

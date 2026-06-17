@@ -12,8 +12,10 @@ const RECOIL_YAW := 0.6
 const MUZZLE_ANCHOR_NAME := "challenger#Cube_001"
 
 const FIRE_STREAM: AudioStream = preload("res://assets/JDSherbert - FirearmFX - Desert Eagle SFX Pack (FREE)/Mono/wav (HD)/JDSherbert - Firearm FX - Pistol SFX Pack - Desert Eagle - Fire - 1.wav")
+const RELOAD_STREAM: AudioStream = preload("res://assets/JDSherbert - FirearmFX - Desert Eagle SFX Pack (FREE)/Stereo/wav (HD)/JDSherbert - Firearm FX - Pistol SFX Pack - Desert Eagle - Reload - 1.wav")
 
 @onready var fire_player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
+@onready var reload_player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
 
 @export var fire_range := 120.0
 @export var fire_damage := 10.0
@@ -23,7 +25,7 @@ const FIRE_STREAM: AudioStream = preload("res://assets/JDSherbert - FirearmFX - 
 
 # Ammo
 @export var max_ammo: int = 7
-@export var reserve_ammo: int = 49
+@export var reserve_ammo: int = 100
 @export var reload_time: float = 1.0
 var current_ammo: int = max_ammo
 
@@ -39,6 +41,7 @@ var _camera: Camera3D
 var _muzzle: Node3D
 var _muzzle_flash: GPUParticles3D
 signal ammo_changed(current: int, reserve: int)
+signal shot_fired()
 
 
 func _ready() -> void:
@@ -55,6 +58,11 @@ func _ready() -> void:
 	fire_player.unit_size = 12.0
 	fire_player.volume_db = -2.0
 	add_child(fire_player)
+	
+	reload_player.stream = RELOAD_STREAM
+	reload_player.unit_size = 12.0
+	reload_player.volume_db = -2.0
+	add_child(reload_player)
 	# Warm up audio/particles to avoid hitch on first shot
 	call_deferred("_warmup_fire_effects")
 
@@ -117,6 +125,7 @@ func _fire() -> void:
 	if current_ammo <= 0:
 		return
 
+	shot_fired.emit()
 	current_ammo -= 1
 	emit_signal("ammo_changed", current_ammo, reserve_ammo)
 
@@ -137,6 +146,8 @@ func _start_reload() -> void:
 		return
 
 	_reload_time_left = reload_time
+	reload_player.pitch_scale = randf_range(0.96, 1.04)
+	reload_player.play()
 
 
 func _finish_reload() -> void:
